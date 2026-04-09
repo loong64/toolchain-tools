@@ -15,8 +15,10 @@ tar --strip-components=1 -xf ../openssl.tar.gz
 
 if [ "$(uname -m)" = "x86_64" ]; then
   target="linux-x86_64"
-else
+elif [ "$(uname -m)" = "aarch64" ]; then
   target="linux-aarch64"
+elif [ "$(uname -m)" = "loongarch64" ]; then
+  target="linux64-loongarch64"
 fi
 
 /usr/bin/perl ./Configure \
