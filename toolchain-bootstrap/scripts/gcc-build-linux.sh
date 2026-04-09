@@ -15,6 +15,9 @@ cd /build
 
 export PATH=/toolchain/bin:$PATH
 
+curl -sSLO https://github.com/cgitmirror/config/raw/refs/heads/master/config.guess
+curl -sSLO https://github.com/cgitmirror/config/raw/refs/heads/master/config.sub
+
 mkdir gcc
 pushd gcc
 tar --strip-components=1 -xf ../gcc-${GCC_VERSION}.tar.xz
@@ -22,21 +25,25 @@ tar --strip-components=1 -xf ../gcc-${GCC_VERSION}.tar.xz
 mkdir gmp
 pushd gmp
 tar --strip-components=1 -xf ../../gmp-${GMP_VERSION}.tar.xz
+cp -f /build/config.guess /build/config.sub .
 popd
 
 mkdir isl
 pushd isl
 tar --strip-components=1 -xf ../../isl-${ISL_VERSION}.tar.bz2
+cp -f /build/config.guess /build/config.sub .
 popd
 
 mkdir mpc
 pushd mpc
 tar --strip-components=1 -xf ../../mpc-${MPC_VERSION}.tar.gz
+cp -f /build/config.guess /build/config.sub build-aux/
 popd
 
 mkdir mpfr
 pushd mpfr
 tar --strip-components=1 -xf ../../mpfr-${MPFR_VERSION}.tar.bz2
+cp -f /build/config.guess /build/config.sub .
 popd
 
 popd
@@ -48,9 +55,12 @@ if [ "$(uname -m)" = "x86_64" ]; then
   triple="x86_64-linux-gnu"
   configureextra="--enable-multiarch --with-arch-32=i686 --with-abi=m64 --enable-multilib --with-multilib-list=m32,m64 --with-tune=generic"
   libdirs="lib32 lib64"
-else
+elif [ "$(uname -m)" = "aarch64" ]; then
   triple="aarch64-linux-gnu"
   configureextra="--enable-multiarch"
+  libdirs="lib64"
+elif [ "$(uname -m)" = "loongarch64" ]; then
+  triple="loongarch64-linux-gnu"
   libdirs="lib64"
 fi
 
@@ -60,7 +70,6 @@ CXX="sccache ${BUILD_CXX}" \
     ../gcc/configure \
     --host=${triple} \
     --prefix=/toolchain \
-    --enable-gold=default \
     --enable-ld \
     --disable-gnu-unique-object \
     --enable-__cxa_atexit \
@@ -71,7 +80,9 @@ CXX="sccache ${BUILD_CXX}" \
     --with-gcc-major-version-only \
     ${configureextra} ${EXTRA_CONFIGURE_ARGS}
 
-time make -j ${PARALLEL} STAGE_CC_WRAPPER=sccache-wrapper.sh
+time make -j ${PARALLEL}
+## error: cannot execute 'cc1': posix_spawnp: Permission denied
+# time make -j ${PARALLEL} STAGE_CC_WRAPPER=sccache-wrapper.sh
 time make -j ${PARALLEL} install DESTDIR=/build/out-install
 
 # Copy the toolchain support files to its own output tree so they can be operated

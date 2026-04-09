@@ -22,8 +22,13 @@ pushd binutils-objdir
 
 if [ "$(uname -m)" = "x86_64" ]; then
   triple="x86_64-unknown-linux-gnu"
-else
+elif [ "$(uname -m)" = "aarch64" ]; then
   triple="aarch64-unknown-linux-gnu"
+elif [ "$(uname -m)" = "loongarch64" ]; then
+  triple="loongarch64-unknown-linux-gnu"
+else
+  echo "Unsupported architecture: $(uname -m)"
+  exit 1
 fi
 
 # gprofng requires a bison newer than what we have. So just disable it.
@@ -34,7 +39,6 @@ LDFLAGS="-static-libgcc -static-libstdc++" \
     ../binutils/configure \
     --build=${triple} \
     --prefix=/toolchain \
-    --enable-gold=default \
     --enable-gprofng=no \
     --enable-ld \
     --enable-plugins \
